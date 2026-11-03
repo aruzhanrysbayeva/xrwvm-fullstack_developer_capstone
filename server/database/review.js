@@ -1,44 +1,13 @@
 const mongoose = require('mongoose');
-
-const Schema = mongoose.Schema;
-
-const reviews = new Schema({
-	id: {
-    type: Number,
-    required: true,
-	},
-	name: {
-    type: String,
-    required: true
-  },
-  dealership: {
-    type: Number,
-    required: true,
-  },
-  review: {
-    type: String,
-    required: true
-  },
-  purchase: {
-    type: Boolean,
-    required: true
-  },
-  purchase_date: {
-    type: String,
-    required: true
-  },
-  car_make: {
-    type: String,
-    required: true
-  },
-  car_model: {
-    type: String,
-    required: true
-  },
-  car_year: {
-    type: Number,
-    required: true
-  },
+const schema = new mongoose.Schema({
+  id: {type: Number, required: true, unique: true},
+  user_id: Number,
+  name: {type: String, required: true, maxlength: 160},
+  dealership: {type: Number, required: true},
+  review: {type: String, required: true, minlength: 5, maxlength: 3000},
+  purchase: {type: Boolean, required: true},
+  purchase_date: String, car_make: String, car_model: String, car_year: Number,
+  sentiment: {type: String, enum: ['positive', 'neutral', 'negative']},
+  created_at: {type: Date, default: Date.now},
 });
-
-module.exports = mongoose.model('reviews', reviews);
+module.exports = mongoose.model('reviews', schema);
