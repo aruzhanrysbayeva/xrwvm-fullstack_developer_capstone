@@ -1,0 +1,133 @@
+# Replace YOUR_REGISTRY before applying inside the isolated course namespace.
+# Create bestcars-secrets separately with DJANGO_SECRET_KEY, ALLOWED_HOSTS,
+# and CSRF_TRUSTED_ORIGINS. Configure an HTTPS route to bestcars-web:8000.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: bestcars-mongo-data}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 1Gi}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: bestcars-web-data}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 1Gi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: bestcars-mongo}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: bestcars-mongo}}
+  template:
+    metadata: {labels: {app: bestcars-mongo}}
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:7
+          ports: [{containerPort: 27017}]
+          volumeMounts: [{name: data, mountPath: /data/db}]
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: bestcars-mongo-data}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: bestcars-mongo}
+spec:
+  selector: {app: bestcars-mongo}
+  ports: [{port: 27017, targetPort: 27017}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: bestcars-dealers}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: bestcars-dealers}}
+  template:
+    metadata: {labels: {app: bestcars-dealers}}
+    spec:
+      containers:
+        - name: dealers
+          image: YOUR_REGISTRY/bestcars-dealers:latest
+          ports: [{containerPort: 3030}]
+          env: [{name: MONGO_URL, value: 'mongodb://bestcars-mongo:27017'}]
+          readinessProbe: {httpGet: {path: /, port: 3030}, initialDelaySeconds: 10}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: bestcars-dealers}
+spec:
+  selector: {app: bestcars-dealers}
+  ports: [{port: 3030, targetPort: 3030}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: bestcars-sentiment}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: bestcars-sentiment}}
+  template:
+    metadata: {labels: {app: bestcars-sentiment}}
+    spec:
+      containers:
+        - name: sentiment
+          image: YOUR_REGISTRY/bestcars-sentiment:latest
+          ports: [{containerPort: 5050}]
+          readinessProbe: {httpGet: {path: /, port: 5050}, initialDelaySeconds: 5}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: bestcars-sentiment}
+spec:
+  selector: {app: bestcars-sentiment}
+  ports: [{port: 5050, targetPort: 5050}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: bestcars-web}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: bestcars-web}}
+  template:
+    metadata: {labels: {app: bestcars-web}}
+    spec:
+      securityContext: {fsGroup: 1000}
+      containers:
+        - name: web
+          image: YOUR_REGISTRY/bestcars-web:latest
+          ports: [{containerPort: 8000}]
+          envFrom: [{secretRef: {name: bestcars-secrets}}]
+          env:
+            - {name: DJANGO_DEBUG, value: 'false'}
+            - {name: BACKEND_URL, value: 'http://bestcars-dealers:3030'}
+            - {name: SENTIMENT_URL, value: 'http://bestcars-sentiment:5050'}
+            - {name: SQLITE_PATH, value: '/app/data/db.sqlite3'}
+          volumeMounts: [{name: data, mountPath: /app/data}]
+          readinessProbe: {tcpSocket: {port: 8000}, initialDelaySeconds: 20}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: '1', memory: 512Mi}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: bestcars-web-data}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: bestcars-web}
+spec:
+  selector: {app: bestcars-web}
+  ports: [{port: 8000, targetPort: 8000}]
