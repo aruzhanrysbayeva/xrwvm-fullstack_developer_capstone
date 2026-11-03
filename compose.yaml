@@ -1,0 +1,27 @@
+services:
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+  dealers:
+    build: ./server/database
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+    depends_on:
+      - mongo
+  sentiment:
+    build: ./server/djangoapp/microservices
+  web:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      BACKEND_URL: http://dealers:3030
+      SENTIMENT_URL: http://sentiment:5050
+      DJANGO_DEBUG: "true"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+    depends_on:
+      - dealers
+      - sentiment
+volumes:
+  mongo-data:

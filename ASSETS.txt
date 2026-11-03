@@ -1,0 +1,5 @@
+Asset: server/frontend/static/team-generated.png
+Tool: built-in image_gen; no CLI fallback or API key.
+Purpose: About Us photograph of fictional educational dealership staff.
+Prompt: Use case: photorealistic-natural. Asset type: an About Us team portrait photograph for a fictional educational car dealership called Best Cars. Three clearly distinct fictional adult staff members standing side by side in a bright contemporary car showroom: woman general manager at left, man customer experience lead in center, woman service advisor at right. Professional friendly realistic candid photography, business casual clothing, daylight, waist-up view, natural skin texture, everyone looking toward camera, evenly spaced, landscape photo. No text, no watermarks, no visible brands. All people are fictional.
+Other image assets: retained from the Apache-licensed IBM course starter.

@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+node_modules/
+staticfiles/
+.mongo-data/
+.mongodb-binaries/
+.local-credentials.json
+evidence/
