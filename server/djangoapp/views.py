@@ -13,7 +13,9 @@ from django.db import IntegrityError, transaction
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
+from django.views.decorators.cache import never_cache
+from django.utils.crypto import constant_time_compare
 from .models import CarMake, CarModel
 from .restapis import get_request, post_review, analyze_review_sentiments
 
@@ -64,10 +66,19 @@ def login_user(request):
     login(request, user)
     return JsonResponse({'status': 'Authenticated', **user_data(user)})
 
-@require_POST
+@require_http_methods(['GET', 'POST'])
+@never_cache
 def logout_user(request):
+    # Course cURL examples use GET. Require a custom header with the raw CSRF
+    # cookie for that compatibility path so cross-site links cannot log out users.
+    # The React UI continues to use Django's CSRF-protected POST endpoint.
+    if request.method == 'GET':
+        token = request.headers.get('X-CSRFToken', '')
+        cookie = request.COOKIES.get('csrftoken', '')
+        if not token or not cookie or not constant_time_compare(token, cookie):
+            return JsonResponse({'status': 403, 'error': 'CSRF token required'}, status=403)
     logout(request)
-    return JsonResponse({'status': 'Logged out'})
+    return JsonResponse({'status': 'Logged out', 'userName': ''})
 
 @require_POST
 @api_errors
