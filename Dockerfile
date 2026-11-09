@@ -1,4 +1,4 @@
-FROM node:24-alpine AS frontend
+FROM node:24-bookworm-slim AS frontend
 WORKDIR /frontend
 COPY server/frontend/package*.json ./
 RUN npm ci
