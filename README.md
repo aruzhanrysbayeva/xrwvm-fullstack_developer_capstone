@@ -84,6 +84,7 @@ State changes require a CSRF cookie and matching `X-CSRFToken` header. First cal
 | POST | `/djangoapp/register` | Five-field validated registration |
 | POST | `/djangoapp/login` | `userName` and `password` login |
 | POST | `/djangoapp/logout` | End the current session |
+| GET | `/djangoapp/logout` | Course cURL compatibility: requires `X-CSRFToken` equal to the raw CSRF cookie; returns an empty `userName` |
 | GET | `/djangoapp/get_dealers` | All branches |
 | GET | `/djangoapp/get_dealers/Kansas` | Kansas branches |
 | GET | `/djangoapp/dealer/1` | One dealer |
