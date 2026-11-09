@@ -34,7 +34,21 @@ class PortalTests(TestCase):
         self.assertEqual(self.client.get('/djangoapp/session').json()['userName'], 'driver')
         self.assertEqual(self.post('logout', {}).status_code, 200)
         self.assertFalse(self.client.get('/djangoapp/session').json()['authenticated'])
-        self.assertEqual(self.client.get('/djangoapp/logout').status_code, 405)
+        self.assertEqual(self.client.get('/djangoapp/logout').status_code, 403)
+
+    def test_course_get_logout_requires_csrf_header_and_clears_identity(self):
+        browser = Client(enforce_csrf_checks=True)
+        browser.force_login(self.user)
+        browser.get('/djangoapp/session')
+        token = browser.cookies['csrftoken'].value
+        self.assertEqual(browser.get('/djangoapp/logout').status_code, 403)
+        self.assertEqual(browser.get('/djangoapp/logout', HTTP_X_CSRFTOKEN='wrong').status_code, 403)
+        self.assertTrue(browser.get('/djangoapp/session').json()['authenticated'])
+        response = browser.get('/djangoapp/logout', HTTP_X_CSRFTOKEN=token)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['userName'], '')
+        self.assertIn('no-store', response['Cache-Control'])
+        self.assertFalse(browser.get('/djangoapp/session').json()['authenticated'])
 
     def test_csrf_is_enforced_for_login(self):
         browser = Client(enforce_csrf_checks=True)
