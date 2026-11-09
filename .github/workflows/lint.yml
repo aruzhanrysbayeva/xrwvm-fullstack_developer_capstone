@@ -17,7 +17,11 @@ jobs:
       - name: Install Linter
         run: python -m pip install flake8==7.3.0
       - name: Run Linter
-        run: flake8 server scripts --count --select=E9,F63,F7,F82 --show-source --statistics
+        run: |
+          flake8 server scripts --count --select=E9,F63,F7,F82 --show-source --statistics
+          echo "Run Linter: SUCCESS (Python)"
+      - name: Complete lint job
+        run: echo "Lint Python Files - all steps completed successfully"
 
   lint-javascript:
     name: Lint JavaScript Files
@@ -28,9 +32,12 @@ jobs:
         with:
           node-version: '24'
       - name: Run Linter
-        run: >-
-          npx --yes eslint@8.57.1 server/database server/frontend/src
-          --ext .js,.jsx --no-eslintrc --env node,browser,es2022
-          --parser-options '{"ecmaVersion":2022,"sourceType":"module","ecmaFeatures":{"jsx":true}}'
-          --rule 'no-undef:error' --rule 'no-dupe-args:error'
+        run: |
+          npx --yes eslint@8.57.1 server/database server/frontend/src \
+          --ext .js,.jsx --no-eslintrc --env node,browser,es2022 \
+          --parser-options '{"ecmaVersion":2022,"sourceType":"module","ecmaFeatures":{"jsx":true}}' \
+          --rule 'no-undef:error' --rule 'no-dupe-args:error' \
           --rule 'no-dupe-keys:error' --rule 'valid-typeof:error'
+          echo "Run Linter: SUCCESS (JavaScript)"
+      - name: Complete lint job
+        run: echo "Lint JavaScript Files - all steps completed successfully"
